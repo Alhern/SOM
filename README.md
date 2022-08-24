@@ -18,6 +18,9 @@ Compile with `make` and run with `./som`
 Use `make clean` to remove the executable and -o files.
 
 ## Results
+
+Versicolor and Virginica can overlap but Setosa is clearly separated from the other two.
+
 ```
 [1] = Setosa
 [2] = Versicolor
