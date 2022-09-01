@@ -62,7 +62,7 @@ float randomFloat(float, float);
 int countLines(char *);
 void vectorMalloc(int, int *);
 void convertLabel(char *, char *);
-void dataVectorInit(char *);
+void dataVectorInit(char *, int);
 void normCalc(int);
 void normalize(int);
 

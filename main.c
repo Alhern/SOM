@@ -20,12 +20,16 @@ int main(int argc, __attribute__((unused))char * argv[]) {
     int * shuffle_order_matrix;
     shuffle_order_matrix = malloc(linesNum*sizeof(int));
 
+    if (!shuffle_order_matrix) {
+        usage("Erreur lors de l'allocation de la mémoire pour le tableau d'indices de la carte.");
+    }
+
     // on peut maintenant allouer de la mémoire pour notre vecteur de données,
     // on en profite pour récupérer les indices (faux pointeurs) pour shuffle_order_matrix
     vectorMalloc(linesNum, shuffle_order_matrix);
 
     // on initialise notre structure de données avec le jeu de données en entrée
-    dataVectorInit(DATA_FILENAME);
+    dataVectorInit(DATA_FILENAME, linesNum);
 
     //printf("\nDisplay data:\n");
     //showData(10, data_vector);
