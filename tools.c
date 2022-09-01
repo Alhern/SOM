@@ -62,9 +62,6 @@ void vectorMalloc(int size, int idx[]) {
 
 // Convertit le nom de la fleur en un chiffre, utile pour afficher la matrice de neurones à la fin
 void convertLabel(char * label, char * token) {
-    if (!token) {
-        usage("Erreur de lecture du fichier de données.");
-    }
     if (strcmp(token, "Iris-setosa") == 0) {
         strcpy(label, "1");
     }
@@ -80,18 +77,12 @@ void convertLabel(char * label, char * token) {
 // Initialisation du vecteur de données
 // on lit les données dans le fichier soumis et on les stocke dans le vecteur de données
 void dataVectorInit(char * filename, int linesNum) {
-    if (!data_vector) {
-        usage("Erreur d'allocation de mémoire pour le vecteur de données.");
-    }
-
     FILE * f = fopen(filename, "r");
-
     if (!f) {
         usage("Impossible d'ouvrir le fichier de données.\nVeuillez vérifier le chemin du fichier.");
     }
 
     char * line = malloc(sizeof(char) * 200);
-
     if (!line) {
         usage("Erreur d'allocation de mémoire pour la variable line dans dataVectorInit().");
     }
@@ -124,9 +115,6 @@ void dataVectorInit(char * filename, int linesNum) {
 // Etape 1 : D'abord le calcul de la norme
 
 void normCalc(int idx) {
-    if (!data_vector) {
-        usage("Erreur d'allocation de mémoire pour le vecteur de données.");
-    }
     float res = 0;
     int i;
     for (i = 0; i < VEC_SIZE; i++) {
@@ -137,9 +125,6 @@ void normCalc(int idx) {
 
 // Etape 2 : Puis la division de chaque attribut par la norme :
 void normalize(int lines) {
-    if (!data_vector) {
-        usage("Erreur d'allocation de mémoire pour le vecteur de données.");
-    }
     int i, j;
     for (i = 0; i < lines; i++) {
         for (j = 0; j < VEC_SIZE; j++) {
@@ -149,7 +134,7 @@ void normalize(int lines) {
 }
 
 
-// APPENTISSAGE
+// APPRENTISSAGE
 
 // Initialisation du réseau de neurones
 void mapInit() {
@@ -212,9 +197,6 @@ float get_distance(float * weight_vector, float * input_vector){
 // calculer la distance euclidienne entre le neurone et le vecteur de données actuel
 // le neurone qui a la distance la plus petite avec le vecteur de données est le BMU
 int * get_BMU(Neural_net * map, Data_vector * data) {
-    if (!map || !data) {
-        usage("Erreur d'allocation de mémoire pour le réseau de neurones ou le vecteur de données.");
-    }
     int i, j;
     int * bmu = malloc(sizeof(int) * 2); // tableau de 2 entiers pour accueillir les coordonnées du BMU
     if (!bmu) {
@@ -240,9 +222,6 @@ int * get_BMU(Neural_net * map, Data_vector * data) {
 // Les coordonnées du BMU sont utilisés pour déterminer les limites du voisinage (1e étape)
 // Si un neurone se trouve dans le voisinage, on ajuste son poids en fonction du vecteur de données sélectionné (2e étape)
 void scale_neighborhood(Neural_net * map, int * bmu, int radius, int idx, float alpha) {
-    if (!map || !bmu || !data_vector) {
-        usage("Erreur d'allocation de mémoire pour le réseau de neurones ou le BMU.");
-    }
     int row_min = bmu[0] - radius;
     int row_max = bmu[0] + radius;
     int col_min = bmu[1] - radius;
@@ -294,9 +273,6 @@ void map_training(Neural_net * map, Data_vector * data, int linesNum, float alph
 
 // On assigne un label à chaque neurone
 void label_map(Neural_net * map, Data_vector * data, int linesNum) {
-    if (!map || !data) {
-        usage("Erreur d'allocation de mémoire pour le réseau de neurones ou le vecteur de données.");
-    }
     float prev_dist, curr_dist;
     int idx, i, j, k;
     for (i = 0; i < ROW_NUM; i++) {
@@ -319,10 +295,6 @@ void label_map(Neural_net * map, Data_vector * data, int linesNum) {
 
 // affichage du réseau de neurones
 void display_map(Neural_net * map) {
-    if (!map) {
-        usage("Erreur d'allocation de mémoire pour le réseau de neurones.");
-    }
-
     int i, j;
     printf("[1] = Setosa\n[2] = Versicolor\n[3] = Virginica\n\n");
     for (i = 0; i < ROW_NUM; i++) {
@@ -352,10 +324,6 @@ void usage(char * message) {
 
 // Affiche N lignes du fichier de données
 void showData(int lines, Data_vector * data_vector) {
-    if (!data_vector) {
-        usage("Erreur d'allocation de mémoire pour le vecteur de données.");
-    }
-
     int i, j;
     for (i = 0; i < lines; i++) {
         for (j = 0; j < VEC_SIZE; j++) {
@@ -369,10 +337,6 @@ void showData(int lines, Data_vector * data_vector) {
 
 // Affiche le réseau de neurones
 void print_map(Neural_net * map) {
-    if (!map) {
-        usage("Erreur d'allocation de mémoire pour le réseau de neurones.");
-    }
-
     int i, j, k;
     for (i = 0; i < ROW_NUM; i++) {
         printf("Row %d\n", i+1);
