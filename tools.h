@@ -45,6 +45,13 @@ typedef struct Data_vector {
     float norm;   // norme du vecteur de données
 } Data_vector;
 
+// Liste chaînée de BMU
+typedef struct BMU {
+    int row;
+    int col;
+    struct BMU * next;
+} BMU;
+
 // Initialisation du réseau de neurones
 Neural_net * neural_network;
 
@@ -70,8 +77,12 @@ void normalize(int);
 void mapInit();
 void shuffle_vects(int *, int);
 float get_distance(float *, float *);
-int * get_BMU(Neural_net * neural_network, Data_vector * data);
-void scale_neighborhood(Neural_net * neural_network, int *, int, int, float);
+//int * get_BMU(Neural_net * neural_network, Data_vector * data); // ancienne version
+BMU get_BMU(Neural_net * neural_network, Data_vector * data);
+void add_to_list(BMU *, int, int);
+void delete_list(BMU **);
+BMU pick_winner(BMU *);
+void scale_neighborhood(Neural_net * neural_network, BMU, int, int, float);
 void map_training(Neural_net * neural_network, Data_vector * data, int, float, int, int *);
 void label_map(Neural_net * neural_network, Data_vector * data, int);
 void display_map(Neural_net * neural_network);

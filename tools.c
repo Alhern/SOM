@@ -93,7 +93,7 @@ void dataVectorInit(char * filename, int linesNum) {
         char * token = strtok(line, ",");
         char * tail;
         for (j = 0; j < VEC_SIZE; j++) {
-            data_vector[i].data[j] = strtof(token, &tail);
+            data_vector[i].data[j] = strtod(token, &tail);
             token = strtok(NULL, ",");
         }
 
@@ -193,10 +193,117 @@ float get_distance(float * weight_vector, float * input_vector){
 }
 
 
+// Ajout du BMU à la liste des BMUs
+void add_to_list(BMU * bmu_list, int row, int col) {
+    BMU * curr = bmu_list;
+    while (curr->next != NULL) {
+        curr = curr->next;
+    }
+    curr->next = malloc(sizeof(BMU));
+    if (!curr->next) {
+        usage("Erreur d'allocation de mémoire pour la liste des BMU.");
+    }
+    curr = curr->next;
+    curr->row = row;
+    curr->col = col;
+    curr->next = NULL;
+}
+
+
+// Suppression de la liste des BMU
+void delete_list(BMU ** bmu_list) {
+    if (*bmu_list != NULL) {
+        BMU * curr, * next;
+        curr = *bmu_list;
+        while (curr != NULL) {
+            next = curr->next;
+            free(curr);
+            curr = next;
+        }
+    }
+    *bmu_list = NULL;
+}
+
+
+// Sélection du BMU dans la liste chaînée
+BMU pick_winner(BMU * bmu_list) {
+    int k, count, random_idx;
+    BMU winner;
+    BMU * tmp;
+
+    tmp = bmu_list;
+    count = 0;
+
+    // on compte tout d'abord le nombre de BMU dans la liste
+    while(tmp != NULL) {
+        tmp = tmp->next;
+        count++;
+    }
+
+    if (count == 0) {
+        usage("Erreur : la liste chaînée des BMU est vide.");
+    }
+
+    // cet indice aléatoire va nous permettre de sélectionner le BMU dans la liste
+    random_idx = randomInt(0, count-1);
+
+    // on retourne à la tête de la liste chaînée
+    tmp = bmu_list;
+
+    // on récupère le BMU gagnant à l'aide de l'indice aléatoire
+    for (k = 0; k < random_idx; k++) {
+        tmp = tmp->next;
+    }
+
+    // on récupère ses coordonnées dans la liste et on est bon
+    winner.row = tmp->row;
+    winner.col = tmp->col;
+
+    return winner;
+}
+
+
 // Pour déterminer le BMU on va itérer sur tous les neurones et
 // calculer la distance euclidienne entre le neurone et le vecteur de données actuel
-// le neurone qui a la distance la plus petite avec le vecteur de données est le BMU
-int * get_BMU(Neural_net * map, Data_vector * data) {
+// le neurone qui a la distance la plus petite avec le vecteur de données est le BMU.
+// UPDATE 27/09/22 : cette version utilise une liste chaînée pour les BMU
+BMU get_BMU(Neural_net * map, Data_vector * data) {
+    int i, j;
+    double curr_dist, prev_dist;
+    BMU * bmu_list;
+    BMU winner;
+
+    bmu_list = malloc(sizeof(BMU));
+    if (!bmu_list) {
+        usage("Erreur d'allocation de mémoire pour la liste des BMU.");
+    }
+    bmu_list->row = 0;
+    bmu_list->col = 0;
+    bmu_list->next = NULL;
+    prev_dist = get_distance(map->neurons[0][0].data, data->data);
+    for (i = 0; i < ROW_NUM; i++) {
+        for (j = 0; j < COL_NUM; j++) {
+            curr_dist = get_distance(map->neurons[i][j].data, data->data);
+            if (curr_dist < prev_dist) {
+                delete_list(&bmu_list);
+                bmu_list = realloc(bmu_list, sizeof(BMU));
+                prev_dist = curr_dist;
+                add_to_list(bmu_list, i, j);
+            }
+            // il est préférable de ne pas utiliser double == double
+            // et d'utiliser à la place une valeur très petite pour comparer 2 doubles :
+            else if (fabs(curr_dist - prev_dist) < 0.001) {
+                add_to_list(bmu_list, i, j);
+            }
+        }
+    }
+    winner = pick_winner(bmu_list);
+    delete_list(&bmu_list);
+    return winner;
+}
+
+// Ancienne version :
+/*int * get_BMU_old(Neural_net * map, Data_vector * data) {
     int i, j;
     int * bmu = malloc(sizeof(int) * 2); // tableau de 2 entiers pour accueillir les coordonnées du BMU
     if (!bmu) {
@@ -215,17 +322,18 @@ int * get_BMU(Neural_net * map, Data_vector * data) {
         }
     }
     return bmu;
-}
+}*/
+
 
 // Le voisinage est l'ensemble des neurones situés dans le rayon (donc distance du voisin <= radius) du BMU, il décroit à chaque itération.
 // La fonction suivante a pour but de déterminer le voisinage du BMU pour ensuite ajuster les poids de chaque voisin.
 // Les coordonnées du BMU sont utilisés pour déterminer les limites du voisinage (1e étape)
 // Si un neurone se trouve dans le voisinage, on ajuste son poids en fonction du vecteur de données sélectionné (2e étape)
-void scale_neighborhood(Neural_net * map, int * bmu, int radius, int idx, float alpha) {
-    int row_min = bmu[0] - radius;
-    int row_max = bmu[0] + radius;
-    int col_min = bmu[1] - radius;
-    int col_max = bmu[1] + radius;
+void scale_neighborhood(Neural_net * map, BMU bmu, int radius, int idx, float alpha) {
+    int row_min = bmu.row - radius;
+    int row_max = bmu.row + radius;
+    int col_min = bmu.col - radius;
+    int col_max = bmu.col + radius;
     int i, j, k;
     for (i = row_min; i <= row_max; i++) {
         for (j = col_min; j <= col_max; j++) {
@@ -242,7 +350,7 @@ void scale_neighborhood(Neural_net * map, int * bmu, int radius, int idx, float 
 
 // Entrainement du réseau de neurones
 void map_training(Neural_net * map, Data_vector * data, int linesNum, float alpha, int iter, int * idxs) {
-    int * bmu;
+    BMU bmu;
     // alpha module les taux de modifications des vecteurs,
     // on garde une copie de l'alpha initial, on en aura besoin pour le diminuer
     float alpha_init = alpha;
@@ -259,15 +367,12 @@ void map_training(Neural_net * map, Data_vector * data, int linesNum, float alph
             // maintenant que le BMU est déterminé, on calcule son voisinage
             scale_neighborhood(map, bmu, n_init, idxs[j], alpha);
         }
-
         // à chaque iteration, alpha (taux d'apprentissage) et le radius de voisinage diminuent linéairement
         // puisque selon Hecht-Nielsen (1991) : "une diminution linéaire de ces valeurs
         // avec le temps semble fonctionner correctement".
         alpha = alpha_init * (1 - ((float)i / iter));
         n_init = RADIUS * (1 - ((float)i / iter));
     }
-    // on libère la mémoire allouée pour le BMU
-    free(bmu);
 }
 
 
@@ -281,7 +386,7 @@ void label_map(Neural_net * map, Data_vector * data, int linesNum) {
             prev_dist = get_distance(map->neurons[i][j].data, data[0].data);
             for (k = 1; k < linesNum; k++) {
                 curr_dist = get_distance(map->neurons[i][j].data, data[k].data);
-                if (curr_dist < prev_dist) {
+                if (curr_dist <= prev_dist) {
                     prev_dist = curr_dist;
                     idx = k;  // position du BMU
                 }
@@ -312,7 +417,6 @@ void display_map(Neural_net * map) {
         printf("\n");
     }
 }
-
 
 
 
