@@ -2,7 +2,9 @@
 
 This implementation of the SOM (Self-Organizing Map) algorithm in C is based on the paper "Self-Organizing Maps" by Teuvo Kohonen.
 
-It uses Ronald Aylmer Fisher's famous Iris dataset, you can find it in the `data` folder.
+SOM is an unsupervised and competitive neural network algorithm used to cluster data. It's based on the idea of self-organizing systems, the algorithm is able to automatically learn the structure of the data and cluster data points that are close together in the data space.
+
+This program uses Ronald Aylmer Fisher's famous Iris dataset, you can find it in the `data` folder.
 The dataset contains 150 samples (50 for each class) of 3 different species of Iris flowers (Iris setosa, Iris virginica and Iris versicolor), with 4 features each: 
 - sepal length in cm, 
 - sepal width in cm, 
